@@ -32,7 +32,7 @@ func init() {
 	realDefaultCipherSuitesTLS13 = defaultCipherSuitesTLS13()
 }
 
-func supportedTLS13Ciphers(hostname string) []uint16 {
+func supportedTLS13Ciphers(hostname, port string) []uint16 {
 	var supportedCiphers []uint16
 
 	for _, c := range realDefaultCipherSuitesTLS13 {
@@ -44,7 +44,8 @@ func supportedTLS13Ciphers(hostname string) []uint16 {
 		// Override the internal slice!
 		varDefaultCipherSuitesTLS13 = []uint16{c}
 
-		conn, err := net.Dial("tcp", hostname+":443")
+		conn, err := net.Dial("tcp", hostname+port)
+		//conn, err := net.Dial("tcp", hostname)
 		if err != nil {
 			panic(err)
 		}
@@ -64,7 +65,7 @@ func supportedTLS13Ciphers(hostname string) []uint16 {
 	return supportedCiphers
 }
 
-func supportedTLS12Ciphers(hostname string) []uint16 {
+func supportedTLS12Ciphers(hostname, port string) []uint16 {
 	// Taken from https://golang.org/pkg/crypto/tls/#pkg-constants
 	var allCiphers = []uint16{
 		tls.TLS_RSA_WITH_RC4_128_SHA,
@@ -101,7 +102,8 @@ func supportedTLS12Ciphers(hostname string) []uint16 {
 			MaxVersion:   tls.VersionTLS12,
 		}
 
-		conn, err := net.Dial("tcp", hostname+":443")
+		///conn, err := net.Dial("tcp", hostname+":443")
+		conn, err := net.Dial("tcp", hostname+port)
 		if err != nil {
 			panic(err)
 		}
@@ -119,19 +121,26 @@ func supportedTLS12Ciphers(hostname string) []uint16 {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("usage: cipherlist <hostname>")
+  var hostname, port string
+  //fmt.Println(len(os.Args))
+  if len(os.Args) == 3 {
+	  hostname = os.Args[1]
+    port = ":"+os.Args[2]
+  } else if len(os.Args) == 2 {
+	  hostname = os.Args[1]
+    port = ":443"
+  } else {
+		fmt.Println("usage: cipherlist <hostname> <port>")
 		return
 	}
 
-	hostname := os.Args[1]
-	fmt.Println("Supported TLS 1.2 ciphers")
-	for _, c := range supportedTLS12Ciphers(hostname) {
+	fmt.Println("Supported TLS 1.2 ciphers", port)
+	for _, c := range supportedTLS12Ciphers(hostname, port) {
 		fmt.Printf("  %s\n", tls.CipherSuiteName(c))
 	}
 	fmt.Println()
 	fmt.Println("Supported TLS 1.3 ciphers")
-	for _, c := range supportedTLS13Ciphers(hostname) {
+	for _, c := range supportedTLS13Ciphers(hostname, port) {
 		fmt.Printf("  %s\n", tls.CipherSuiteName(c))
 	}
 }
